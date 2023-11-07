@@ -16,7 +16,4 @@ all:
 
 package: all
 	cp $(OUT) $(PACKAGEDIR)
-	cp -r $(ASSETDIR) $(PACKAGEDIR)
-	cp LICENSE $(PACKAGEDIR)
-	cp *.txt $(PACKAGEDIR)
 	zip -r $(PACKAGENAME) $(PACKAGEDIR)
