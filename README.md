@@ -9,4 +9,4 @@ A small, header-only game framework using SDL2
 
 # Usage
 Simply include the `t3a.h` header file in your C project
-You can view an example of usage [here](src/example.c).
+You can view an example of usage [here](example/example.c).
