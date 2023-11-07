@@ -1,40 +1,42 @@
 #pragma once
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 
 #define SCREEN_WIDTH 64
 #define SCREEN_HEIGHT 64
+
 #define CONTROL_MAX 64
 #define TIMER_MAX 64
 
 typedef void (*func_t)();
 
-Uint16 * pixels;
-Uint16 palette[16] = {
-  0x000f,
-  0x445f,
-  0x207f,
-  0x32ff,
-  0x603f,
-  0xf03f,
-  0x708f,
-  0xf3df,
-  0x072f,
-  0x0f3f,
-  0x278f,
-  0x2eff,
-  0x960f,
-  0xfe3f,
-  0x779f,
-  0xffff,
+SDL_Color palette[16] = {
+  {0x00, 0x00, 0x00, 0xff},
+  {0x44, 0x44, 0x55, 0xff}, 
+  {0x22, 0x00, 0x77, 0xff}, 
+  {0x33, 0x22, 0xff, 0xff},
+  {0x66, 0x00, 0x33, 0xff}, 
+  {0xff, 0x00, 0x33, 0xff}, 
+  {0x77, 0x00, 0x88, 0xff}, 
+  {0xff, 0x33, 0xdd, 0xff}, 
+  {0x00, 0x77, 0x22, 0xff},
+  {0x00, 0xff, 0x33, 0xff}, 
+  {0x22, 0x77, 0x88, 0xff}, 
+  {0x22, 0xee, 0xff, 0xff}, 
+  {0x99, 0x66, 0x00, 0xff}, 
+  {0xff, 0xee, 0x33, 0xff}, 
+  {0x77, 0x77, 0x99, 0xff}, 
+  {0xff, 0xff, 0xff, 0xff}, 
 };
 
 typedef struct screen_s {
   SDL_Window * window;
   SDL_Renderer * renderer;
+  SDL_Surface * surface;
   SDL_Texture * texture;
 } screen_t;
 
@@ -79,50 +81,38 @@ static inline int tea_init_screen(screen_t * screen){
   screen->renderer = SDL_CreateRenderer(screen->window, -1, 0);
   assert(screen->renderer);
   SDL_RenderSetLogicalSize(screen->renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+  screen->surface = SDL_GetWindowSurface(screen->window);
+  assert(screen->surface);
   
-  screen->texture = SDL_CreateTexture(screen->renderer,
-				      SDL_PIXELFORMAT_RGBA4444,
-				      SDL_TEXTUREACCESS_STATIC,
-				      SCREEN_WIDTH,
-				      SCREEN_HEIGHT);
+  screen->texture = SDL_CreateTextureFromSurface(screen->renderer, screen->surface);
   assert(screen->texture);
   
-  pixels = malloc(SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(Uint16));
-  memset(pixels, 0x00, SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(Uint16));
-  SDL_UpdateTexture(screen->texture, NULL, pixels, SCREEN_WIDTH * sizeof(Uint16));
+  SDL_SetRenderDrawColor(screen->renderer, 0, 0, 0, 255);
+  SDL_RenderClear(screen->renderer);
   printf("Successfully initialized game window\n");
   return 1;
 }
 
-static inline void tea_set_pixel(Uint16 color_id, int x, int y){
+static inline void tea_set_pixel(screen_t * screen, Uint16 color_id, int x, int y){
   assert(x >= 0 && x < SCREEN_WIDTH);
   assert(y >= 0 && y < SCREEN_HEIGHT);
   assert(color_id >= 0 && color_id < 16);
   
-  int index = (y * SCREEN_WIDTH) + x;
-  pixels[index] = palette[color_id % 16];
-}
-
-static inline Uint16 tea_get_pixel(int x, int y){
-  assert(x >= 0 && x < SCREEN_WIDTH);
-  assert(y >= 0 && y < SCREEN_HEIGHT);
-
-  int index = (y * SCREEN_WIDTH) + x;
-  return pixels[index];
+  SDL_SetRenderDrawColor(screen->renderer, palette[color_id].r,
+			 palette[color_id].g,
+			 palette[color_id].b,
+			 255);
+  SDL_RenderDrawPoint(screen->renderer, x, y);
 }
 
 static inline void tea_draw_screen(screen_t * screen){
-  SDL_RenderClear(screen->renderer);
-  SDL_UpdateTexture(screen->texture,
-		    NULL,
-		    pixels,
-		    SCREEN_WIDTH * sizeof(Uint16));
-  SDL_RenderCopy(screen->renderer, screen->texture, NULL, NULL);
   SDL_RenderPresent(screen->renderer);
+  SDL_SetRenderDrawColor(screen->renderer, 0, 0, 0, 255);
+  SDL_RenderClear(screen->renderer);
 }
 
 static inline void tea_destroy_screen(screen_t * screen){
-  free(pixels);
   SDL_DestroyTexture(screen->texture);
   SDL_DestroyRenderer(screen->renderer);
   SDL_DestroyWindow(screen->window);
@@ -202,7 +192,7 @@ static inline void tea_handle_timers(){
     if (SDL_GetTicks() - timers.info[index].start < timers.info[index].length){
       continue;
     }
-    timers.info[index].function();
     timers.in_use[index] = 0;
+    timers.info[index].function();
   }
 }
