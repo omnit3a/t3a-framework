@@ -1,0 +1,22 @@
+CC=gcc
+CFLAGS=-Wall -I$(INCLUDE) -lm -lSDL2
+
+INCLUDE=include/
+
+SRC := $(shell find . -name *.c)
+
+OUT=64engine-test
+
+PACKAGEDIR=bin/
+PACKAGENAME=engine.zip
+
+all:
+	clear
+	$(CC) -o $(OUT) $(SRC) $(CFLAGS)
+
+package: all
+	cp $(OUT) $(PACKAGEDIR)
+	cp -r $(ASSETDIR) $(PACKAGEDIR)
+	cp LICENSE $(PACKAGEDIR)
+	cp *.txt $(PACKAGEDIR)
+	zip -r $(PACKAGENAME) $(PACKAGEDIR)
