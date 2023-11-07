@@ -8,5 +8,11 @@ A small, header-only game framework using SDL2
 - 64x64 pixels, 16 Colors
 
 # Usage
-Simply include the `t3a.h` header file in your C project <br>
+Simply include the `t3a.h` header file in your C project. <br>
 You can view an example of usage [here](example/example.c).
+
+# To-Do
+- [ ] Sprites
+- [ ] Sound effects
+- [ ] Music
+- [ ] Configurable color palette
