@@ -5,7 +5,7 @@ INCLUDE=include/
 
 SRC := $(shell find . -name *.c)
 
-OUT=64engine-test
+OUT=framework-test
 
 PACKAGEDIR=bin/
 PACKAGENAME=engine.zip
