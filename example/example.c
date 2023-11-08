@@ -1,43 +1,78 @@
 #include <SDL2/SDL.h>
-#include "../t3a.h"
+#include <t3a.h>
 
-int color_offset = 0;
-int color_direction = 1;
+int sprite_x_offset = 0;
+int sprite_y_offset = 0;
 
-void test_input(){
-  printf("Space pressed\n");
+void input_up(){
+  sprite_y_offset--;
+}
+
+void input_down(){
+  sprite_y_offset++;
+}
+
+void input_left(){
+  sprite_x_offset--;
+}
+
+void input_right(){
+  sprite_x_offset++;
 }
 
 void test_timer(){
-  color_offset++;
-  tea_start_timer(50, &test_timer);
+  printf("Timer finished\n");
 }
 
-int main(int argc, char ** argv){
+int main(){
 
   int quit = 0;
   screen_t screen;
-  tea_init_screen(&screen);
+  sprite_t sprite;
+  sprite_atlas_t sprite_atlas;
+  font_t font;
+  
+  tea_init_screen(&screen, "t3a Example Program");
+  tea_init_ttf();
   tea_init_controls();
   tea_init_timers();
-  tea_register_control(SDLK_SPACE, &test_input);
-  tea_start_timer(50, &test_timer);
+
+  tea_init_sprite(&sprite, "example/assets/bmp-example.bmp");
+  tea_init_collider(&sprite.collider, sprite.target.w, sprite.target.h);
+  
+  tea_init_atlas(&sprite_atlas, "example/assets/atlas-example.bmp", 8, 8);
+  tea_init_collider(&sprite_atlas.collider, sprite_atlas.tile.w, sprite_atlas.tile.h);
+
+  tea_init_font(&font, "example/assets/font-example.ttf");
+  
+  tea_register_control(SDLK_w, &input_up);
+  tea_register_control(SDLK_s, &input_down);
+  tea_register_control(SDLK_a, &input_left);
+  tea_register_control(SDLK_d, &input_right);
+  
+  tea_start_timer(1000, &test_timer);
   
   while (!quit){
-    
+
+    SDL_Delay(10);
     if (tea_handle_input() < 0){
       quit = 1;
     }
     tea_handle_timers();
 
-    for (int x = 0 ; x < SCREEN_WIDTH ; x++){
-      for (int y = 0 ; y < SCREEN_HEIGHT ; y++){  
-	tea_set_pixel(&screen, (y + x + color_offset) % 16, x, y);
-      }
-    }
+    tea_set_collider_position(&sprite.collider, sprite_x_offset, sprite_y_offset);
+    
+    int is_touching = tea_is_touching(&sprite_atlas.collider, &sprite.collider);
+    
+    tea_set_sprite_position(&sprite, sprite_x_offset, sprite_y_offset);
+    tea_draw_text(&screen, &font, "Hello, world", 0, 0);
+    tea_draw_atlas(&screen, &sprite_atlas, 0);
+    tea_draw_sprite(&screen, &sprite);
+    
     tea_draw_screen(&screen);
   }
-  
+
+  tea_destroy_ttf();
   tea_destroy_screen(&screen);
   
   return 0;
