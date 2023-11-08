@@ -14,5 +14,6 @@ You can view an example of usage [here](example/example.c).
 # To-Do
 - [X] Sprites
 - [X] Font Rendering
+- [X] Sprite Atlases
 - [ ] Sound effects
 - [ ] Music
