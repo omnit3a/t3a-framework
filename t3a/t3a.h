@@ -50,8 +50,16 @@ typedef struct origin_s {
   int relative_y;
 } origin_t;
 
+typedef struct collider_s {
+  int x;
+  int y;
+  int width;
+  int height;
+} collider_t;
+
 typedef struct sprite_s {
   origin_t origin;
+  collider_t collider;
   SDL_Rect target;
   SDL_Rect clip;
   char path[PATH_LENGTH];
@@ -60,6 +68,7 @@ typedef struct sprite_s {
 typedef struct sprite_atlas_s {
   int current_tile;
   origin_t origin;
+  collider_t collider;
   SDL_Rect atlas;
   SDL_Rect tile;
   char path[PATH_LENGTH];
@@ -117,25 +126,23 @@ static inline void tea_init_sprite(sprite_t * sprite, char * path){
     return;
   }
   strncpy(sprite->path, path, PATH_LENGTH);
-  sprite->origin.relative_x = (temp_surface->w)/2;
-  sprite->origin.relative_y = (temp_surface->h)/2;
-  sprite->target = (SDL_Rect){0-sprite->origin.relative_x, 0-sprite->origin.relative_y, 0, 0};
+  sprite->origin.relative_x = 0;
+  sprite->origin.relative_y = 0;
+  sprite->target = (SDL_Rect){0, 0, 0, 0};
   sprite->clip = (SDL_Rect){0, 0, 0, 0};
   sprite->target.w = temp_surface->w;
   sprite->target.h = temp_surface->h;
   SDL_FreeSurface(temp_surface);
 }
 
-static inline void tea_set_sprite_origin(sprite_t * sprite, int x, int y){
-  sprite->origin.relative_x = x;
-  sprite->origin.relative_y = y;
-  sprite->target.x = 0 - x;
-  sprite->target.y = 0 - y;
-}
-
 static inline void tea_set_sprite_position(sprite_t * sprite, int x, int y){
   sprite->target.x = x - sprite->origin.relative_x;
   sprite->target.y = y - sprite->origin.relative_y;
+}
+
+static inline void tea_get_sprite_position(sprite_t * sprite, int * x, int *y){
+  *x = sprite->target.x;
+  *y = sprite->target.y;
 }
 
 static inline void tea_draw_sprite(screen_t * screen, sprite_t * sprite){
@@ -161,11 +168,11 @@ static inline void tea_init_atlas(sprite_atlas_t * sprite_atlas, char * path, in
   }
   strncpy(sprite_atlas->path, path, PATH_LENGTH);
 
-  sprite_atlas->origin.relative_x = tile_width/2;
-  sprite_atlas->origin.relative_y = tile_height/2;
+  sprite_atlas->origin.relative_x = 0;
+  sprite_atlas->origin.relative_y = 0;
   
-  sprite_atlas->atlas.x = 0-sprite_atlas->origin.relative_x;
-  sprite_atlas->atlas.y = 0-sprite_atlas->origin.relative_y;;
+  sprite_atlas->atlas.x = 0;
+  sprite_atlas->atlas.y = 0;
   sprite_atlas->atlas.w = tile_width;
   sprite_atlas->atlas.h = tile_height;
 
@@ -173,21 +180,19 @@ static inline void tea_init_atlas(sprite_atlas_t * sprite_atlas, char * path, in
   sprite_atlas->tile.y = 0;
   sprite_atlas->tile.w = tile_width;
   sprite_atlas->tile.h = tile_height;
-
+  
   sprite_atlas->current_tile = 0;
   SDL_FreeSurface(temp_surface);
-}
-
-static inline void tea_set_atlas_origin(sprite_atlas_t * sprite_atlas, int x, int y){
-  sprite_atlas->origin.relative_x = x;
-  sprite_atlas->origin.relative_y = y;
-  sprite_atlas->atlas.x = 0 - x;
-  sprite_atlas->atlas.y = 0 - y;
 }
 
 static inline void tea_set_atlas_position(sprite_atlas_t * sprite_atlas, int x, int y){
   sprite_atlas->atlas.x = x - sprite_atlas->origin.relative_x;
   sprite_atlas->atlas.y = y - sprite_atlas->origin.relative_y;
+}
+
+static inline void tea_get_atlas_position(sprite_atlas_t * sprite_atlas, int * x, int * y){
+  *x = sprite_atlas->atlas.x;
+  *y = sprite_atlas->atlas.y;
 }
 
 static inline void tea_draw_atlas(screen_t * screen, sprite_atlas_t * sprite_atlas, int tile){
@@ -340,4 +345,59 @@ static inline void tea_handle_timers(){
     timers.in_use[index] = 0;
     timers.info[index].function();
   }
+}
+
+static inline float tea_sqrt(float number){
+  const int magic = 0x5f3759df;
+  long iterator;
+
+  float x = number * 0.5f;
+  float y = number;
+  iterator = * (long *) &y;
+  iterator = magic - (iterator >> 1);
+  y = * (float *) &iterator;
+  y = y * (1.5f - (x * y * y));
+  y = y	* (1.5f - (x * y * y));
+
+  return (y * number);
+}
+
+static inline void tea_init_collider(collider_t * collider, int width, int height){
+  collider->width = width;
+  collider->height = height;
+  collider->x = 0;
+  collider->y = 0;
+}
+
+static inline void tea_set_collider_position(collider_t * collider, int x, int y){
+  collider->x = x;
+  collider->y = y;
+}
+
+static inline void tea_get_collider_position(collider_t * collider, int * x, int * y){
+  *x = collider->x;
+  *y = collider->y;
+}
+
+static inline void tea_set_collider_size(collider_t * collider, int width, int height){
+  collider->width = width;
+  collider->height = height;
+}
+
+static inline void tea_get_collider_size(collider_t * collider, int * width, int * height){
+  *width = collider->width;
+  *height = collider->height;
+}
+
+static inline float tea_distance_between(collider_t * a, collider_t * b){
+  float distance = tea_sqrt(((b->x - a->x) * (b->x - a->x)) + ((b->y - a->y) * (b->y - a->y)));
+  if (distance < 0){
+    distance *= -1;
+  }
+  return distance;
+}
+
+static inline int tea_is_touching(collider_t * a, collider_t * b){
+  float distance = tea_distance_between(a, b);
+  return ((distance < a->width && distance < a->height) || (distance < b->width && distance < b->height));
 }

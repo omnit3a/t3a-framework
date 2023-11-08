@@ -36,10 +36,12 @@ int main(){
   tea_init_ttf();
   tea_init_controls();
   tea_init_timers();
-  tea_init_sprite(&sprite, "example/assets/bmp-example.bmp");
 
+  tea_init_sprite(&sprite, "example/assets/bmp-example.bmp");
+  tea_init_collider(&sprite.collider, sprite.target.w, sprite.target.h);
+  
   tea_init_atlas(&sprite_atlas, "example/assets/atlas-example.bmp", 8, 8);
-  tea_set_atlas_origin(&sprite_atlas, 0, 0);
+  tea_init_collider(&sprite_atlas.collider, sprite_atlas.tile.w, sprite_atlas.tile.h);
 
   tea_init_font(&font, "example/assets/font-example.ttf");
   
@@ -58,6 +60,10 @@ int main(){
     }
     tea_handle_timers();
 
+    tea_set_collider_position(&sprite.collider, sprite_x_offset, sprite_y_offset);
+    
+    int is_touching = tea_is_touching(&sprite_atlas.collider, &sprite.collider);
+    
     tea_set_sprite_position(&sprite, sprite_x_offset, sprite_y_offset);
     tea_draw_text(&screen, &font, "Hello, world", 0, 0);
     tea_draw_atlas(&screen, &sprite_atlas, 0);
