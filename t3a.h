@@ -46,11 +46,25 @@ typedef struct timer_list_s {
   tea_timer_t info[TIMER_MAX];
 } timer_list_t;
 
+typedef struct origin_s {
+  int relative_x;
+  int relative_y;
+} origin_t;
+
 typedef struct sprite_s {
+  origin_t origin;
   SDL_Rect target;
   SDL_Rect clip;
   char path[PATH_LENGTH];
 } sprite_t;
+
+typedef struct sprite_atlas_s {
+  int current_tile;
+  origin_t origin;
+  SDL_Rect atlas;
+  SDL_Rect tile;
+  char path[PATH_LENGTH];
+} sprite_atlas_t;
 
 typedef struct font_s {
   int width;
@@ -98,17 +112,24 @@ static inline int tea_init_screen(screen_t * screen){
 }
 
 static inline void tea_init_sprite(sprite_t * sprite, char * path){
-  strncpy(sprite->path, path, PATH_LENGTH);
-  sprite->target = (SDL_Rect){0, 0, 0, 0};
-  sprite->clip = (SDL_Rect){0, 0, 0, 0};
-  SDL_Surface * temp_surface = SDL_LoadBMP(sprite->path);
+  SDL_Surface * temp_surface = SDL_LoadBMP(path);
   if (!temp_surface){
-    fprintf(stderr, "Could not load image %s\n", sprite->path);
+    fprintf(stderr, "Could not load image %s\n", path);
     return;
   }
+  strncpy(sprite->path, path, PATH_LENGTH);
+  sprite->origin.relative_x = (temp_surface->w)/2;
+  sprite->origin.relative_y = (temp_surface->h)/2;
+  sprite->target = (SDL_Rect){0-sprite->origin.relative_x, 0-sprite->origin.relative_y, 0, 0};
+  sprite->clip = (SDL_Rect){0, 0, 0, 0};
   sprite->target.w = temp_surface->w;
   sprite->target.h = temp_surface->h;
   SDL_FreeSurface(temp_surface);
+}
+
+static inline void tea_set_sprite_position(sprite_t * sprite, int x, int y){
+  sprite->target.x = x - sprite->origin.relative_x;
+  sprite->target.y = y - sprite->origin.relative_y;
 }
 
 static inline void tea_draw_sprite(screen_t * screen, sprite_t * sprite){
@@ -124,6 +145,59 @@ static inline void tea_draw_sprite(screen_t * screen, sprite_t * sprite){
   SDL_RenderCopy(screen->renderer, screen->texture, NULL, &sprite->target);
   SDL_DestroyTexture(screen->texture);
   SDL_FreeSurface(bmp);
+}
+
+static inline void tea_init_atlas(sprite_atlas_t * sprite_atlas, char * path, int tile_width, int tile_height){
+  SDL_Surface * temp_surface = SDL_LoadBMP(path);
+  if (!temp_surface){
+    fprintf(stderr, "Could not load image %s\n", path);
+    return;
+  }
+  strncpy(sprite_atlas->path, path, PATH_LENGTH);
+
+  sprite_atlas->origin.relative_x = tile_width/2;
+  sprite_atlas->origin.relative_y = tile_height/2;
+  
+  sprite_atlas->atlas.x = 0-sprite_atlas->origin.relative_x;
+  sprite_atlas->atlas.y = 0-sprite_atlas->origin.relative_y;;
+  sprite_atlas->atlas.w = tile_width;
+  sprite_atlas->atlas.h = tile_height;
+
+  sprite_atlas->tile.x = 0;
+  sprite_atlas->tile.y = 0;
+  sprite_atlas->tile.w = tile_width;
+  sprite_atlas->tile.h = tile_height;
+
+  sprite_atlas->current_tile = 0;
+  SDL_FreeSurface(temp_surface);
+}
+
+static inline void tea_set_atlas_position(sprite_atlas_t * sprite_atlas, int x, int y){
+  sprite_atlas->atlas.x = x - sprite_atlas->origin.relative_x;
+  sprite_atlas->atlas.y = y - sprite_atlas->origin.relative_y;
+}
+
+static inline void tea_draw_atlas(screen_t * screen, sprite_atlas_t * sprite_atlas, int tile){
+  SDL_Surface * bmp = SDL_LoadBMP(sprite_atlas->path);
+  if (!bmp){
+    return;
+  }
+  screen->texture = SDL_CreateTextureFromSurface(screen->renderer, bmp);
+
+  if (sprite_atlas->current_tile != tile){
+    if (!tile){
+      sprite_atlas->tile.x = 0;
+      sprite_atlas->tile.y = 0;
+    } else {
+      sprite_atlas->tile.x = (tile % (bmp->w / sprite_atlas->tile.w)) * sprite_atlas->tile.w;
+      sprite_atlas->tile.y = (tile / (bmp->h / sprite_atlas->tile.h)) * sprite_atlas->tile.h;
+    }
+    sprite_atlas->current_tile = tile;
+  }
+
+  SDL_RenderCopy(screen->renderer, screen->texture, &sprite_atlas->tile, &sprite_atlas->atlas);
+  SDL_DestroyTexture(screen->texture);
+  SDL_FreeSurface(bmp);  
 }
 
 static inline void tea_draw_screen(screen_t * screen){
