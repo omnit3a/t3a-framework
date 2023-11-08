@@ -6,6 +6,8 @@ A small, header-only game framework using SDL2
 - Easy renderer setup and drawing
 - Timers, allowing for code to be run after a certain amount of time
 - 128x96 pixels
+- Sprites and sprite atlases
+- Font rendering
 
 # Usage
 Simply include the `t3a.h` header file in your C project. <br>
