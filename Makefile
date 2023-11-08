@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -I$(INCLUDE) -lm -lSDL2 -lSDL2_mixer
+CFLAGS=-Wall -I$(INCLUDE) -lm -lSDL2 -lSDL2_ttf
 
 INCLUDE=include/
 

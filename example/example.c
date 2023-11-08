@@ -29,12 +29,15 @@ int main(int argc, char ** argv){
   int quit = 0;
   screen_t screen;
   sprite_t sprite;
-    
+  font_t font;
+  
   tea_init_screen(&screen);
+  tea_init_ttf();
   tea_init_controls();
   tea_init_timers();
   tea_init_sprite(&sprite, "example/bmp-example.bmp"); 
-
+  tea_init_font(&font, "example/font-example.ttf");
+  
   tea_register_control(SDLK_w, &input_up);
   tea_register_control(SDLK_s, &input_down);
   tea_register_control(SDLK_a, &input_left);
@@ -53,10 +56,12 @@ int main(int argc, char ** argv){
     sprite.target.x = sprite_x_offset;
     sprite.target.y = sprite_y_offset;
     tea_draw_sprite(&screen, &sprite);
-
+    tea_draw_text(&screen, &font, "Hello, world", 0, 0);
+    
     tea_draw_screen(&screen);
   }
-  
+
+  tea_destroy_ttf();
   tea_destroy_screen(&screen);
   
   return 0;

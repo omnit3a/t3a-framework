@@ -2,7 +2,7 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
-#include <SDL2/SDL_mixer.h>
+#include <SDL2/SDL_ttf.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -52,6 +52,14 @@ typedef struct sprite_s {
   char path[PATH_LENGTH];
 } sprite_t;
 
+typedef struct font_s {
+  int width;
+  int height;
+  TTF_Font * font;
+  SDL_Color color;
+  char path[PATH_LENGTH];
+} font_t;
+
 control_list_t controls;
 timer_list_t timers;
 
@@ -60,7 +68,7 @@ static inline int tea_init_screen(screen_t * screen){
     fprintf(stderr, "Failed to initialize SDL2\n");
     return 0;
   }
-
+  
   screen->window = SDL_CreateWindow("t3a",
 				    SDL_WINDOWPOS_UNDEFINED,
 				    SDL_WINDOWPOS_UNDEFINED,
@@ -130,6 +138,48 @@ static inline void tea_destroy_screen(screen_t * screen){
   SDL_DestroyWindow(screen->window);
   SDL_Quit();
   printf("Goodbye!\n");
+}
+
+static inline void tea_init_ttf(){
+  TTF_Init();
+}
+
+static inline void tea_destroy_ttf(){
+  TTF_Quit();
+}
+
+static inline void tea_init_font(font_t * font, char * path){
+  font->width = 0;
+  font->height = 0;
+  font->font = TTF_OpenFont(path, 8);
+  if (!font){
+    fprintf(stderr, "Could not load font %s\n", path);
+    return;
+  }
+  font->color = (SDL_Color){255, 255, 255, 255};
+  strncpy(font->path, path, PATH_LENGTH);
+}
+
+static inline void tea_draw_text(screen_t * screen, font_t * font, char * string, int x, int y){
+  SDL_Surface * text = TTF_RenderText_Solid(font->font, string, font->color);
+  if (!text){
+    return;
+  }
+  screen->texture = SDL_CreateTextureFromSurface(screen->renderer, text);
+  SDL_QueryTexture(screen->texture, NULL, NULL, &font->width, &font->height);
+  SDL_Rect target;
+  target.x = x * font->width;
+  target.y = y * font->height;
+  target.w = font->width;
+  target.h = font->height;
+  SDL_RenderCopy(screen->renderer, screen->texture, NULL, &target);
+
+  SDL_DestroyTexture(screen->texture);
+  SDL_FreeSurface(text);
+}
+
+static inline void tea_destroy_font(font_t * font){
+  TTF_CloseFont(font->font);
 }
 
 static inline void tea_init_controls(){
