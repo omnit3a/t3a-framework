@@ -68,7 +68,6 @@ typedef struct sprite_s {
 typedef struct sprite_atlas_s {
   int current_tile;
   origin_t origin;
-  collider_t collider;
   SDL_Rect atlas;
   SDL_Rect tile;
   char path[PATH_LENGTH];
@@ -389,15 +388,33 @@ static inline void tea_get_collider_size(collider_t * collider, int * width, int
   *height = collider->height;
 }
 
-static inline float tea_distance_between(collider_t * a, collider_t * b){
+static inline float tea_distance(collider_t * a, collider_t * b){
   float distance = tea_sqrt(((b->x - a->x) * (b->x - a->x)) + ((b->y - a->y) * (b->y - a->y)));
-  if (distance < 0){
+  if (distance <= 0){
+    distance *= -1;
+  }
+  return distance;
+}
+
+static inline float tea_x_distance(collider_t * a, collider_t * b){
+  float distance = tea_sqrt((b->x - a->x) * (b->x - a->x));
+  if (distance <= 0){
+    distance *= -1;
+  }
+  return distance;
+}
+
+static inline float tea_y_distance(collider_t * a, collider_t * b){
+  float distance = tea_sqrt((b->y - a->y) * (b->y - a->y));
+  if (distance <= 0){
     distance *= -1;
   }
   return distance;
 }
 
 static inline int tea_is_touching(collider_t * a, collider_t * b){
-  float distance = tea_distance_between(a, b);
-  return ((distance < a->width && distance < a->height) || (distance < b->width && distance < b->height));
+  float x_distance = tea_x_distance(a, b);
+  float y_distance = tea_y_distance(a, b);
+  return ((x_distance < a->width && y_distance < a->height) ||
+	  (x_distance < b->width && y_distance < b->height));
 }
