@@ -1,5 +1,5 @@
 #include <SDL2/SDL.h>
-#include "../t3a.h"
+#include <t3a.h>
 
 int sprite_x_offset = 0;
 int sprite_y_offset = 0;
@@ -32,12 +32,15 @@ int main(){
   sprite_atlas_t sprite_atlas;
   font_t font;
   
-  tea_init_screen(&screen);
+  tea_init_screen(&screen, "t3a Example Program");
   tea_init_ttf();
   tea_init_controls();
   tea_init_timers();
   tea_init_sprite(&sprite, "example/assets/bmp-example.bmp");
+
   tea_init_atlas(&sprite_atlas, "example/assets/atlas-example.bmp", 8, 8);
+  tea_set_atlas_origin(&sprite_atlas, 0, 0);
+
   tea_init_font(&font, "example/assets/font-example.ttf");
   
   tea_register_control(SDLK_w, &input_up);
@@ -56,9 +59,9 @@ int main(){
     tea_handle_timers();
 
     tea_set_sprite_position(&sprite, sprite_x_offset, sprite_y_offset);
-    tea_draw_sprite(&screen, &sprite);
-    tea_draw_atlas(&screen, &sprite_atlas, 0);
     tea_draw_text(&screen, &font, "Hello, world", 0, 0);
+    tea_draw_atlas(&screen, &sprite_atlas, 0);
+    tea_draw_sprite(&screen, &sprite);
     
     tea_draw_screen(&screen);
   }

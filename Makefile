@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-Wall -I$(INCLUDE) -lm -lSDL2 -lSDL2_ttf
 
-INCLUDE=include/
+INCLUDE=t3a/
 
 SRC := $(shell find . -name *.c)
 
