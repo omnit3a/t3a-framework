@@ -1,6 +1,5 @@
 #include <SDL2/SDL.h>
 #include "../t3a.h"
-#include <string.h>
 
 float sprite_x_offset = 0;
 float sprite_y_offset = 0;
