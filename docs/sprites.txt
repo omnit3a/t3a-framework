@@ -1,0 +1,48 @@
+t3a-framework Documentation: Sprites and Sprite Atlases
+
+Functions related to sprites:
+  tea_init_sprite(sprite_t * sprite, char * path);
+  tea_set_sprite_origin(sprite_t * sprite, int x, int y);
+  tea_set_sprite_position(sprite_t * sprite, int x, int y);
+  tea_draw_sprite(screen_t * screen, sprite_t * sprite);
+
+Functions related to sprite atlases:
+  tea_init_atlas(sprite_atlas_t * sprite_atlas, char * path, int tile_width, int tile_height);
+  tea_set_atlas_origin(sprite_atlas_t * sprite_atlas, int x, int y);
+  tea_set_atlas_position(sprite_atlas_t * sprite_atlas, int x, int y);
+  tea_draw_atlas(screen_t * screen, sprite_atlas_t * sprite_atlas, int tile);
+
+Sprite Initialization:
+  To create a sprite, first declare a variable of the type "sprite_t".
+  Then, pass a pointer to that variable to the "tea_init_sprite" function, as well as the path
+  to the ".bmp" file you will be using as the texture for the sprite.
+
+  It is important to note that both sprites and sprite atlases have their origin
+  point (the point that marks their position) is always initialized to the center
+  of the sprite.
+
+  To set the position of a sprite, pass a pointer to an initialized sprite to the
+  "tea_set_sprite_position" function, as well as the new X and Y coordinates.
+
+  To set the origin of a sprite, pass a pointer to an initialized sprite to the
+  "tea_set_sprite_origin" function, as well as the new X and Y coordinates relative
+  to the top left corner of the sprite. This function also resets the absolute position
+  of the sprite to 0, 0.
+
+  Finally, to draw a sprite, pass a pointer to an initialized variable of type "screen_t" to
+  the "tea_draw_sprite" function, as well as a pointer to the sprite. This will draw the sprite
+  at the sprite's internally stored X and Y coordinates on screen.
+
+Sprite Atlas Initialization:
+  To create a sprite atlas, declare a variable of the type "sprite_atlas_t".
+  Then, pass a a pointer to that variable to the "tea_init_atlas" function, as well as the path
+  to the ".bmp" file that will be used as the atlas texture, and the width and height of each tile
+  in the atlas.
+
+  The "tea_set_atlas_position" function works the same way as the "tea_set_sprite_position"
+  function, but with a pointer to a variable of type "sprite_atlas_t" being passed instead of
+  a pointer to a variable of type "sprite_t"
+
+  The "tea_draw_atlas" function works like as the "tea_draw_sprite" function, in the same
+  way as stated above, but a tile index must also be supplied, which is used to calculate
+  the correct texture to display.
