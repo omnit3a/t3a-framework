@@ -2,36 +2,21 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_mixer.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 
-#define SCREEN_WIDTH 64
-#define SCREEN_HEIGHT 64
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 96
 
 #define CONTROL_MAX 64
 #define TIMER_MAX 64
+#define PATH_LENGTH 256
+#define SFX_MAX 64
 
 typedef void (*func_t)();
-
-SDL_Color palette[16] = {
-  {0x00, 0x00, 0x00, 0xff},
-  {0x44, 0x44, 0x55, 0xff}, 
-  {0x22, 0x00, 0x77, 0xff}, 
-  {0x33, 0x22, 0xff, 0xff},
-  {0x66, 0x00, 0x33, 0xff}, 
-  {0xff, 0x00, 0x33, 0xff}, 
-  {0x77, 0x00, 0x88, 0xff}, 
-  {0xff, 0x33, 0xdd, 0xff}, 
-  {0x00, 0x77, 0x22, 0xff},
-  {0x00, 0xff, 0x33, 0xff}, 
-  {0x22, 0x77, 0x88, 0xff}, 
-  {0x22, 0xee, 0xff, 0xff}, 
-  {0x99, 0x66, 0x00, 0xff}, 
-  {0xff, 0xee, 0x33, 0xff}, 
-  {0x77, 0x77, 0x99, 0xff}, 
-  {0xff, 0xff, 0xff, 0xff}, 
-};
 
 typedef struct screen_s {
   SDL_Window * window;
@@ -61,11 +46,17 @@ typedef struct timer_list_s {
   tea_timer_t info[TIMER_MAX];
 } timer_list_t;
 
+typedef struct sprite_s {
+  SDL_Rect target;
+  SDL_Rect clip;
+  char path[PATH_LENGTH];
+} sprite_t;
+
 control_list_t controls;
 timer_list_t timers;
 
 static inline int tea_init_screen(screen_t * screen){
-  if (SDL_Init(SDL_INIT_VIDEO) < 0){
+  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0){
     fprintf(stderr, "Failed to initialize SDL2\n");
     return 0;
   }
@@ -73,8 +64,8 @@ static inline int tea_init_screen(screen_t * screen){
   screen->window = SDL_CreateWindow("t3a",
 				    SDL_WINDOWPOS_UNDEFINED,
 				    SDL_WINDOWPOS_UNDEFINED,
-				    SCREEN_WIDTH * 8,
-				    SCREEN_HEIGHT * 8,
+				    SCREEN_WIDTH * 4,
+				    SCREEN_HEIGHT * 4,
 				    0);
   assert(screen->window);
   
@@ -85,7 +76,11 @@ static inline int tea_init_screen(screen_t * screen){
   screen->surface = SDL_GetWindowSurface(screen->window);
   assert(screen->surface);
   
-  screen->texture = SDL_CreateTextureFromSurface(screen->renderer, screen->surface);
+  screen->texture = SDL_CreateTexture(screen->renderer,
+				      SDL_PIXELFORMAT_RGBA8888,
+				      SDL_TEXTUREACCESS_STATIC,
+				      SCREEN_WIDTH,
+				      SCREEN_HEIGHT);
   assert(screen->texture);
   
   SDL_SetRenderDrawColor(screen->renderer, 0, 0, 0, 255);
@@ -94,16 +89,33 @@ static inline int tea_init_screen(screen_t * screen){
   return 1;
 }
 
-static inline void tea_set_pixel(screen_t * screen, Uint16 color_id, int x, int y){
-  assert(x >= 0 && x < SCREEN_WIDTH);
-  assert(y >= 0 && y < SCREEN_HEIGHT);
-  assert(color_id >= 0 && color_id < 16);
+static inline void tea_init_sprite(sprite_t * sprite, char * path){
+  strncpy(sprite->path, path, PATH_LENGTH);
+  sprite->target = (SDL_Rect){0, 0, 0, 0};
+  sprite->clip = (SDL_Rect){0, 0, 0, 0};
+  SDL_Surface * temp_surface = SDL_LoadBMP(sprite->path);
+  if (!temp_surface){
+    fprintf(stderr, "Could not load image %s\n", sprite->path);
+    return;
+  }
+  sprite->target.w = temp_surface->w;
+  sprite->target.h = temp_surface->h;
+  SDL_FreeSurface(temp_surface);
+}
+
+static inline void tea_draw_sprite(screen_t * screen, sprite_t * sprite){
+  SDL_Surface * bmp = SDL_LoadBMP(sprite->path);
+  if (!bmp){
+    return;
+  }
+  screen->texture = SDL_CreateTextureFromSurface(screen->renderer, bmp);
+
+  sprite->target.w = bmp->w;
+  sprite->target.h = bmp->h;
   
-  SDL_SetRenderDrawColor(screen->renderer, palette[color_id].r,
-			 palette[color_id].g,
-			 palette[color_id].b,
-			 255);
-  SDL_RenderDrawPoint(screen->renderer, x, y);
+  SDL_RenderCopy(screen->renderer, screen->texture, NULL, &sprite->target);
+  SDL_DestroyTexture(screen->texture);
+  SDL_FreeSurface(bmp);
 }
 
 static inline void tea_draw_screen(screen_t * screen){
@@ -146,21 +158,17 @@ static inline int tea_handle_input(){
     return -1;
   }
 
-  if (event.type != SDL_KEYDOWN){
-    return 0;
-  }
-  
+  const Uint8 * current_key_states = SDL_GetKeyboardState(NULL);
   for (int index = 0 ; index < CONTROL_MAX ; index++){
     if (!controls.in_use[index]){
       continue;
     }
-    if (event.key.keysym.sym != controls.info[index].keycode){
+    if (!current_key_states[SDL_GetScancodeFromKey(controls.info[index].keycode)]){
       continue;
     }
     controls.info[index].function();
-    return 1;
   }  
-  return 0;
+  return 1;
 }
 
 static inline void tea_init_timers(){

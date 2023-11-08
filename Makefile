@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -I$(INCLUDE) -lm -lSDL2
+CFLAGS=-Wall -I$(INCLUDE) -lm -lSDL2 -lSDL2_mixer
 
 INCLUDE=include/
 
@@ -16,4 +16,7 @@ all:
 
 package: all
 	cp $(OUT) $(PACKAGEDIR)
+	cp -r $(ASSETDIR) $(PACKAGEDIR)
+	cp LICENSE $(PACKAGEDIR)
+	cp *.txt $(PACKAGEDIR)
 	zip -r $(PACKAGENAME) $(PACKAGEDIR)
